@@ -20,17 +20,24 @@ synopsis:            Parse, build and manipulate GnuCash files
 description:         Please see the README on GitHub at <https://github.com/groscoe/haskell-gnucash#readme>
 
 dependencies:
-  - base >= 4.7 && < 5
+  - base >= 4.6 && < 5
   - Decimal              >= 0.5.1 && < 0.6
-  - bytestring           >= 0.10.12 && < 0.11
+  - bytestring           >= 0.10.10 && < 0.11
   - exceptions           >= 0.10.4 && < 0.11
   - hxt                  >= 9.3.1 && < 9.4
   - time                 >= 1.9.3 && < 1.10
   - text                 >= 1.2.4 && < 1.3
   - magic                >= 1.1 && < 1.2
   - temporary            >= 1.3 && < 1.4
-  - unordered-containers >= 0.2.13 && < 0.3
+  - unordered-containers >= 0.2.10 && < 0.3
   - zlib                 >= 0.6.2 && < 0.7
+
+
+default-extensions:
+  - OverloadedStrings
+  - RecordWildCards
+  - Arrows
+  - LambdaCase
 
 library:
   source-dirs: src
@@ -50,3 +57,10 @@ tests:
     - base
     - gnucash
     - doctest
+    - QuickCheck
+    - hspec
+    - tasty
+    - tasty-hspec
+    - tasty-quickcheck
+    - quickcheck-instances
+    - generic-random
