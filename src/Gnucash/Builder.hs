@@ -1,16 +1,16 @@
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Gnucash.Builder where
 
 import Data.Decimal (roundTo)
+import qualified Data.HashMap.Strict as HM
 import Data.Maybe (catMaybes, listToMaybe)
 import Data.Text (Text, unpack)
 import Data.Time
 import Gnucash.Types
 import Text.XML.HXT.Core
-import qualified Data.HashMap.Strict as HM
 
 buildDocument :: ArrowXml a => [Book] -> a n XmlTree
 buildDocument books =
@@ -71,14 +71,15 @@ buildBook book@Book {..} =
 
 buildSlots :: ArrowXml a => Slots -> [a n XmlTree]
 buildSlots =
-  fmap buildSlot .
-  HM.toList
+  fmap buildSlot
+    . HM.toList
   where
     buildSlot (key, kvpValue) =
-      selem "slot"
-      [ buildText "slot:key" key
-      , buildKvpValue kvpValue
-      ]
+      selem
+        "slot"
+        [ buildText "slot:key" key,
+          buildKvpValue kvpValue
+        ]
 
 getKvpValueType :: KvpValue -> String
 getKvpValueType = \case
@@ -94,8 +95,8 @@ getKvpValueType = \case
   KvpFrame _ -> "frame"
 
 buildKvpValue :: ArrowXml a => KvpValue -> a n XmlTree
-buildKvpValue kvpValue = mkelem "slot:value" [sattr "type" (getKvpValueType kvpValue)]
-  $ case kvpValue of
+buildKvpValue kvpValue = mkelem "slot:value" [sattr "type" (getKvpValueType kvpValue)] $
+  case kvpValue of
     KvpInteger i -> [txt (show i)]
     KvpDouble d -> [txt (show d)]
     KvpNumeric q -> [txt (formatQuantityForGnucash q)]
@@ -107,13 +108,12 @@ buildKvpValue kvpValue = mkelem "slot:value" [sattr "type" (getKvpValueType kvpV
     KvpList vs -> buildKvpValue <$> vs
     KvpFrame f -> buildSlots f
 
-
 buildCountDataDirectives :: ArrowXml a => Book -> a n XmlTree
 buildCountDataDirectives Book {..} =
-  buildCountData "commodity" (length bookCommodities) <+>
-  buildCountData "account" (length bookAccounts) <+>
-  buildCountData "transaction" (length bookTransactions) <+>
-  buildCountData "price" (length bookPrices)
+  buildCountData "commodity" (length bookCommodities)
+    <+> buildCountData "account" (length bookAccounts)
+    <+> buildCountData "transaction" (length bookTransactions)
+    <+> buildCountData "price" (length bookPrices)
 
 buildCountData :: ArrowXml a => String -> Int -> a n XmlTree
 buildCountData countType count =
@@ -124,11 +124,12 @@ buildGUID tagName guid = mkelem tagName [sattr "type" "guid"] [txt (unpack guid)
 
 buildCommodity :: ArrowXml a => String -> [a n XmlTree] -> Commodity -> a n XmlTree
 buildCommodity tagName attrs (SimpleCommodity SimpleCommodityAttrs {..}) =
-  mkelem tagName attrs
+  mkelem
+    tagName
+    attrs
     [ buildText "cmdty:space" simpleCmdtySpace,
       buildText "cmdty:id" simpleCmdtyId
     ]
-
 buildCommodity tagName attrs (ComplexCommodity ComplexCommodityAttrs {..}) =
   mkelem tagName attrs $
     catMaybes
@@ -154,6 +155,7 @@ buildAccount Account {..} =
         listToMaybe [selem "act:slots" (buildSlots actSlots) | not (null actSlots)],
         buildGUID "act:parent" <$> actParentId
       ]
+
 --
 buildAccountType :: ArrowXml a => AccountType -> a n XmlTree
 buildAccountType actType =
@@ -187,15 +189,15 @@ buildTransaction :: ArrowXml a => Transaction -> a n XmlTree
 buildTransaction Transaction {..} =
   mkelem "gnc:transaction" [sattr "version" "2.0.0"] $
     catMaybes
-    [ Just $ buildGUID "trn:id" trnId,
-      Just $ buildCommodity "trn:currency" [] trnCurrency,
-      buildText "trn:num" <$> trnNum,
-      Just $ buildDatetime "trn:date-posted" trnDatePosted,
-      Just $ buildDatetime "trn:date-entered" trnDateEntered,
-      Just $ buildText "trn:description" trnDescription,
-      listToMaybe [selem "trn:slots" (buildSlots trnSlots) | not (null trnSlots)],
-      Just $ selem "trn:splits" (buildTransactionSplit <$> trnSplits)
-    ]
+      [ Just $ buildGUID "trn:id" trnId,
+        Just $ buildCommodity "trn:currency" [] trnCurrency,
+        buildText "trn:num" <$> trnNum,
+        Just $ buildDatetime "trn:date-posted" trnDatePosted,
+        Just $ buildDatetime "trn:date-entered" trnDateEntered,
+        Just $ buildText "trn:description" trnDescription,
+        listToMaybe [selem "trn:slots" (buildSlots trnSlots) | not (null trnSlots)],
+        Just $ selem "trn:splits" (buildTransactionSplit <$> trnSplits)
+      ]
 
 buildDatetime :: ArrowXml a => String -> UTCTime -> a n XmlTree
 buildDatetime tagName datetime =
@@ -214,15 +216,15 @@ buildTransactionSplit :: ArrowXml a => TransactionSplit -> a n XmlTree
 buildTransactionSplit TransactionSplit {..} =
   selem "trn:split" $
     catMaybes
-    [ Just $ buildGUID "split:id" splitId,
-      buildText "split:memo" <$> splitMemo,
-      buildText "split:action" <$> splitAction,
-      Just $ buildSplitReconciledState splitReconciledState,
-      buildDatetime "split:reconcile-date" <$> splitReconcileDate,
-      Just $ buildQuantity "split:value" splitValue,
-      Just $ buildQuantity "split:quantity" splitQuantity,
-      Just $ buildGUID "split:account" splitAccountId
-    ]
+      [ Just $ buildGUID "split:id" splitId,
+        buildText "split:memo" <$> splitMemo,
+        buildText "split:action" <$> splitAction,
+        Just $ buildSplitReconciledState splitReconciledState,
+        buildDatetime "split:reconcile-date" <$> splitReconcileDate,
+        Just $ buildQuantity "split:value" splitValue,
+        Just $ buildQuantity "split:quantity" splitQuantity,
+        Just $ buildGUID "split:account" splitAccountId
+      ]
 
 buildSplitReconciledState :: ArrowXml a => SplitReconciledState -> a n XmlTree
 buildSplitReconciledState state =
@@ -249,15 +251,15 @@ formatQuantityForGnucash Quantity {..} =
 buildPrice :: ArrowXml a => CommodityPrice -> a n XmlTree
 buildPrice CommodityPrice {..} =
   selem "price" $
-    catMaybes [
-      Just $ buildGUID "price:id" priceId,
-      Just $ buildCommodity "price:commodity" [] priceCommodity,
-      Just $ buildCommodity "price:currency" [] priceCurrency,
-      Just $ buildDatetime "price:time" priceTime,
-      buildText "price:source" <$> priceSource,
-      buildPriceType <$> priceType,
-      Just $ buildQuantity "price:value" priceValue
-    ]
+    catMaybes
+      [ Just $ buildGUID "price:id" priceId,
+        Just $ buildCommodity "price:commodity" [] priceCommodity,
+        Just $ buildCommodity "price:currency" [] priceCurrency,
+        Just $ buildDatetime "price:time" priceTime,
+        buildText "price:source" <$> priceSource,
+        buildPriceType <$> priceType,
+        Just $ buildQuantity "price:value" priceValue
+      ]
 
 -- TODO: handle missing/wrong types
 buildPriceType :: ArrowXml a => PriceType -> a n XmlTree

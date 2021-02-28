@@ -3,7 +3,7 @@ module Gnucash.Types where
 import Data.Decimal (Decimal)
 import Data.HashMap.Strict (HashMap)
 import Data.Text (Text)
-import Data.Time (UTCTime, Day)
+import Data.Time (Day, UTCTime)
 
 data Book = Book
   { bookId :: !Text,
@@ -13,12 +13,12 @@ data Book = Book
     bookTransactions :: ![Transaction],
     bookSlots :: !Slots
   }
-  deriving (Show)
+  deriving (Show, Eq)
 
 data Commodity
   = SimpleCommodity SimpleCommodityAttrs
   | ComplexCommodity ComplexCommodityAttrs
-  deriving (Show)
+  deriving (Show, Eq)
 
 data ComplexCommodityAttrs = ComplexCommodityAttrs
   { complexCmdtySpace :: !Text,
@@ -28,13 +28,13 @@ data ComplexCommodityAttrs = ComplexCommodityAttrs
     complexCmdtyFraction :: !Int,
     complexCmdtySlots :: !Slots
   }
-  deriving (Show)
+  deriving (Show, Eq)
 
 data SimpleCommodityAttrs = SimpleCommodityAttrs
   { simpleCmdtySpace :: !Text,
     simpleCmdtyId :: !Text
   }
-  deriving (Show)
+  deriving (Show, Eq)
 
 data CommodityPrice = CommodityPrice
   { priceId :: !Text,
@@ -45,7 +45,7 @@ data CommodityPrice = CommodityPrice
     priceType :: !(Maybe PriceType),
     priceValue :: !Quantity
   }
-  deriving (Show)
+  deriving (Show, Eq)
 
 data PriceType
   = BidPrice
@@ -67,7 +67,7 @@ data Account = Account
     actParentId :: !(Maybe Text),
     actSlots :: !Slots
   }
-  deriving (Show)
+  deriving (Show, Eq)
 
 data AccountType
   = None
@@ -102,7 +102,7 @@ data Transaction = Transaction
     trnSplits :: ![TransactionSplit],
     trnSlots :: !Slots
   }
-  deriving (Show)
+  deriving (Show, Eq)
 
 data TransactionSplit = TransactionSplit
   { splitId :: !Text,
@@ -114,7 +114,7 @@ data TransactionSplit = TransactionSplit
     splitQuantity :: !Quantity,
     splitAccountId :: !Text
   }
-  deriving (Show)
+  deriving (Show, Eq)
 
 data SplitReconciledState
   = Y
@@ -128,7 +128,7 @@ data Quantity = Quantity
   { quantityAmount :: !Decimal,
     quantitySCU :: !Integer
   }
-  deriving (Show)
+  deriving (Show, Eq)
 
 data KvpValue
   = KvpInteger !Int
@@ -141,7 +141,6 @@ data KvpValue
   | KvpBinary !Text
   | KvpList ![KvpValue]
   | KvpFrame !Slots
-  deriving (Show)
+  deriving (Show, Eq)
 
 type Slots = HashMap Text KvpValue
-

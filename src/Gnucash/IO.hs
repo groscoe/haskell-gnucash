@@ -10,8 +10,8 @@ import Control.Monad.Catch (MonadMask, finally)
 import Control.Monad.IO.Class
 import qualified Data.ByteString.Lazy as BS
 import GHC.IO.Handle (hClose)
-import Gnucash.Parser (parseBook)
 import Gnucash.Builder (buildDocument)
+import Gnucash.Parser (parseBook)
 import Gnucash.Types (Book)
 import Magic
   ( MagicFlag (MagicMimeType),

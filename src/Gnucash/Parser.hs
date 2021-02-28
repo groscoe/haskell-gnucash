@@ -7,21 +7,32 @@
 
 module Gnucash.Parser where
 
+import Control.Arrow
+  ( Arrow (arr, second, (***)),
+    returnA,
+    (<<<),
+    (>>>),
+  )
+import Control.Arrow.ArrowIf
+  ( ArrowIf (choiceA, orElse),
+    IfThen ((:->)),
+  )
+import Control.Arrow.ArrowList (ArrowList (constA, listA))
 import qualified Data.HashMap.Strict as HM
 import Data.Text (Text, pack)
 import Data.Time
-    ( UTCTime, Day, defaultTimeLocale, parseTimeOrError, ParseTime )
+  ( Day,
+    ParseTime,
+    UTCTime,
+    defaultTimeLocale,
+    parseTimeOrError,
+  )
 import Gnucash.Types
-import Control.Arrow
-    ( returnA, (<<<), (>>>), Arrow(arr, second, (***)) )
-import Control.Arrow.ArrowList ( ArrowList(listA, constA) )
-import Control.Arrow.ArrowIf
-    ( ArrowIf(orElse, choiceA), IfThen((:->)) )
-
 import Text.XML.HXT.Core
-    ( ArrowXml(hasAttrValue, isElem, hasName, getText),
-      XmlTree,
-      ArrowTree(getChildren, deep) )
+  ( ArrowTree (deep, getChildren),
+    ArrowXml (getText, hasAttrValue, hasName, isElem),
+    XmlTree,
+  )
 
 -- utilitiess
 type Parser b = forall a. ArrowXml a => a XmlTree b
