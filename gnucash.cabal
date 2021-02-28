@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: db5778cb3051a4fab87a764f2d4c0af78ee76e93f3822f4496d2bbbe102d50eb
+-- hash: ba85fd643178063b0054676f7579c181558ce91dfd8193fc6f226de3c9a8aefc
 
 name:           gnucash
 version:        0.1.0.0
@@ -32,6 +32,7 @@ library
       Gnucash.IO
       Gnucash.Parser
       Gnucash.Types
+      Gnucash.Utils
   other-modules:
       Paths_gnucash
   hs-source-dirs:

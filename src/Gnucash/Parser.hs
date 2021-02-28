@@ -3,32 +3,12 @@
 
 module Gnucash.Parser where
 
-import Control.Arrow
-  ( Arrow (arr, second, (***)),
-    returnA,
-    (<<<),
-    (>>>),
-  )
-import Control.Arrow.ArrowIf
-  ( ArrowIf (choiceA, orElse),
-    IfThen ((:->)),
-  )
-import Control.Arrow.ArrowList (ArrowList (constA, listA))
 import qualified Data.HashMap.Strict as HM
 import Data.Text (Text, pack)
-import Data.Time
-  ( Day,
-    ParseTime,
-    UTCTime,
-    defaultTimeLocale,
-    parseTimeOrError,
-  )
+import Data.Time (UTCTime)
 import Gnucash.Types
+import Gnucash.Utils (readGnuCashDateFormat, readGnuCashQuantity, readGnuCashTimestampFormat)
 import Text.XML.HXT.Core
-  ( ArrowTree (deep, getChildren),
-    ArrowXml (getText, hasAttrValue, hasName, isElem),
-    XmlTree,
-  )
 
 -- utilitiess
 type Parser b = forall a. ArrowXml a => a XmlTree b
@@ -44,16 +24,6 @@ textAtTag tag = stringAtTag tag >>> arr pack
 
 timestampAtTag :: String -> Parser UTCTime
 timestampAtTag tag = atNamedChild tag >>> stringAtTag "ts:date" >>> arr readGnuCashTimestampFormat
-
--- TODO: handle wrong dates correctly
-readTimestamp :: ParseTime t => String -> String -> t
-readTimestamp = parseTimeOrError True defaultTimeLocale
-
-readGnuCashTimestampFormat :: String -> UTCTime
-readGnuCashTimestampFormat = readTimestamp "%Y-%m-%d %H:%M:%S %z"
-
-readGnuCashDateFormat :: String -> Day
-readGnuCashDateFormat = readTimestamp "%Y-%m-%d"
 
 maybeA :: ArrowIf a => a b c -> a b (Maybe c)
 maybeA a = (a >>> arr Just) `orElse` constA Nothing
@@ -90,7 +60,7 @@ parseSlotValue =
         >>> choiceA
           [ hasAttrValue "type" (== "integer") :-> (getChildren >>> getText >>> arr (KvpInteger . read)),
             hasAttrValue "type" (== "double") :-> (getChildren >>> getText >>> arr (KvpDouble . read)),
-            hasAttrValue "type" (== "numeric") :-> (getChildren >>> getText >>> arr (KvpNumeric . parseGnuCashQuantity)),
+            hasAttrValue "type" (== "numeric") :-> (getChildren >>> getText >>> arr (KvpNumeric . readGnuCashQuantity)),
             hasAttrValue "type" (== "string") :-> (getChildren >>> getText >>> arr (KvpString . pack)),
             hasAttrValue "type" (== "guid") :-> (getChildren >>> getText >>> arr (KvpGUID . pack)),
             hasAttrValue "type" (== "timespec") :-> (timestampAtTag tagName >>> arr KvpTimespec),
@@ -181,8 +151,8 @@ parseTransactionSplit =
       splitAction <- maybeA (textAtTag "split:action") -< el
       splitReconcileDate <- maybeA (timestampAtTag "split:reconcile-date") -< el
       splitReconciledState <- arr readSplitReconciledState <<< textAtTag "split:reconciled-state" -< el
-      splitValue <- arr parseGnuCashQuantity <<< stringAtTag "split:value" -< el
-      splitQuantity <- arr parseGnuCashQuantity <<< stringAtTag "split:quantity" -< el
+      splitValue <- arr readGnuCashQuantity <<< stringAtTag "split:value" -< el
+      splitQuantity <- arr readGnuCashQuantity <<< stringAtTag "split:quantity" -< el
       splitAccountId <- textAtTag "split:account" -< el
       returnA -< TransactionSplit {..}
 
@@ -195,15 +165,6 @@ readSplitReconciledState = \case
   "f" -> F
   "v" -> V
 
-parseGnuCashQuantity :: String -> Quantity
-parseGnuCashQuantity quantity =
-  let (fractionalQuantityAmount, quantitySCU) = (read *** read) $ splitOn '/' quantity
-      quantityAmount = fractionalQuantityAmount / fromInteger quantitySCU
-   in Quantity {..}
-  where
-    splitOn :: Eq a => a -> [a] -> ([a], [a])
-    splitOn sep = second tail . span (/= sep)
-
 parsePrice :: Parser CommodityPrice
 parsePrice =
   atNamedChild "price"
@@ -214,7 +175,7 @@ parsePrice =
       priceTime <- timestampAtTag "price:time" -< el
       priceSource <- maybeA (textAtTag "price:source") -< el
       priceType <- maybeA (arr readPriceType <<< textAtTag "price:type") -< el
-      priceValue <- arr parseGnuCashQuantity <<< stringAtTag "price:value" -< el
+      priceValue <- arr readGnuCashQuantity <<< stringAtTag "price:value" -< el
       returnA -< CommodityPrice {..}
 
 -- TODO: handle wrong values

@@ -1,11 +1,11 @@
 module Gnucash.Builder where
 
-import Data.Decimal (roundTo)
 import qualified Data.HashMap.Strict as HM
 import Data.Maybe (catMaybes, listToMaybe)
 import Data.Text (Text, unpack)
 import Data.Time
 import Gnucash.Types
+import Gnucash.Utils (formatDatetimeForGnucash, formatQuantityForGnucash)
 import Text.XML.HXT.Core
 
 buildDocument :: ArrowXml a => [Book] -> a n XmlTree
@@ -199,11 +199,6 @@ buildDatetime :: ArrowXml a => String -> UTCTime -> a n XmlTree
 buildDatetime tagName datetime =
   selem tagName [selem "ts:date" [txt (formatDatetimeForGnucash datetime)]]
 
-formatDatetimeForGnucash :: UTCTime -> String
-formatDatetimeForGnucash =
-  let gnucashDatetimeFormat = "%Y-%m-%d %H:%M:%S %z"
-   in formatTime defaultTimeLocale gnucashDatetimeFormat
-
 buildGDate :: ArrowXml a => Day -> a n XmlTree
 buildGDate date =
   selem "gdate" [txt (formatTime defaultTimeLocale "%Y-%m-%d" date)]
@@ -234,15 +229,6 @@ buildSplitReconciledState state =
 buildQuantity :: ArrowXml a => String -> Quantity -> a n XmlTree
 buildQuantity tagName quantity =
   selem tagName [txt (formatQuantityForGnucash quantity)]
-
--- | GnuCash quantities are expressed in multiples of an SCU (
--- Smallest Commodity Unit). For instance, "2.34" with an SCU of
--- 100 would be "234/100"
-formatQuantityForGnucash :: Quantity -> String
-formatQuantityForGnucash Quantity {..} =
-  show (roundTo 0 $ quantityAmount * fromInteger quantitySCU)
-    <> "/"
-    <> show quantitySCU
 
 buildPrice :: ArrowXml a => CommodityPrice -> a n XmlTree
 buildPrice CommodityPrice {..} =
