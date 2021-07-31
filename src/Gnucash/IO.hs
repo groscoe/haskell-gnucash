@@ -35,6 +35,7 @@ readGnucashDocument inputPath = do
             `finally` hClose tmpHandle
         readXmlGnucashDocument tmpPath
     else readXmlGnucashDocument inputPath
+{-# SCC readGnucashDocument #-}
 
 -- | Read an uncompressed gnucash file and return all books declared in it.
 readXmlGnucashDocument :: MonadIO m => FilePath -> m [Book]
@@ -65,3 +66,4 @@ writeXmlGnucashDocument path books = do
         >>> writeDocument [withOutputEncoding utf8, withIndent yes] path
         >>> getErrStatus
   pure statusCode
+{-# SCC writeXmlGnucashDocument #-}

@@ -8,25 +8,40 @@ import Data.Time
     UTCTime,
     defaultTimeLocale,
     formatTime,
-    parseTimeOrError,
+    parseTimeOrError, FormatTime
   )
 import Gnucash.Types (Quantity (..))
 
 -- TODO: handle wrong dates correctly
 readTimestamp :: ParseTime t => String -> String -> t
 readTimestamp = parseTimeOrError True defaultTimeLocale
+{-# INLINE readTimestamp #-}
+
+formatTimestamp :: FormatTime t => String -> t -> String
+formatTimestamp = formatTime defaultTimeLocale
+{-# INLINE formatTimestamp #-}
 
 gnucashDatetimeFormat :: String
 gnucashDatetimeFormat = "%Y-%m-%d %H:%M:%S %z"
 
+gnuCashDateFormat :: String
+gnuCashDateFormat = "%Y-%m-%d"
+
 readGnuCashTimestampFormat :: String -> UTCTime
-readGnuCashTimestampFormat = readTimestamp "%Y-%m-%d %H:%M:%S %z"
+readGnuCashTimestampFormat = readTimestamp gnucashDatetimeFormat
+{-# INLINE readGnuCashTimestampFormat #-}
 
 readGnuCashDateFormat :: String -> Day
-readGnuCashDateFormat = readTimestamp "%Y-%m-%d"
+readGnuCashDateFormat = readTimestamp gnuCashDateFormat
+{-# INLINE readGnuCashDateFormat #-}
 
 formatDatetimeForGnucash :: UTCTime -> String
-formatDatetimeForGnucash = formatTime defaultTimeLocale gnucashDatetimeFormat
+formatDatetimeForGnucash = formatTimestamp gnucashDatetimeFormat
+{-# INLINE formatDatetimeForGnucash #-}
+
+formatDateForGnuCash :: Day -> String
+formatDateForGnuCash = formatTimestamp gnuCashDateFormat
+{-# INLINE formatDateForGnuCash #-}
 
 -- | GnuCash quantities are expressed in multiples of an SCU (
 -- Smallest Commodity Unit). For instance, "2.34" with an SCU of
@@ -36,6 +51,7 @@ formatQuantityForGnucash Quantity {..} =
   show (roundTo 0 $ quantityAmount * fromInteger quantitySCU)
     <> "/"
     <> show quantitySCU
+{-# INLINE formatQuantityForGnucash #-}
 
 readGnuCashQuantity :: String -> Quantity
 readGnuCashQuantity quantity =
@@ -45,3 +61,5 @@ readGnuCashQuantity quantity =
   where
     splitOn :: Eq a => a -> [a] -> ([a], [a])
     splitOn sep = second tail . span (/= sep)
+
+{-# INLINE readGnuCashQuantity #-}

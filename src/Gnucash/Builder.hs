@@ -66,9 +66,7 @@ buildBook book@Book {..} =
       ]
 
 buildSlots :: ArrowXml a => Slots -> [a n XmlTree]
-buildSlots =
-  fmap buildSlot
-    . HM.toList
+buildSlots = fmap buildSlot . HM.toList
   where
     buildSlot (key, kvpValue) =
       selem
